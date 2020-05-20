@@ -3,17 +3,16 @@ package auth
 import (
 	"context"
 	"encoding/json"
-
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-
 	"fitness/api/errors"
-	"fitness/database/users"
+	"fitness/services/users"
 	apictx "gotodo/api/context"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 // key is the key type used by this package for the request context.
