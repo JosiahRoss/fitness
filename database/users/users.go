@@ -43,6 +43,14 @@ FROM users
 WHERE id=?
 `
 
+	// stmtSelectByUserName defines the Sql statment to
+	// selct a user by thier user name.
+	stmtSelectByUserName = `
+SELECT id,full_name, user_name, email, password created_at
+FROM users
+WHERE user_name?
+`
+
 	// stmtSelectByEmail defines the SQL statement
 	// to select a user by their email address.
 	stmtSelectByEmail = `
@@ -110,11 +118,28 @@ func (db *Database) GetByID(id int) (*User, error) {
 
 // GetByEmail retrieves a user by their email.
 func (db *Database) GetByEmail(email string) (*User, error) {
-	// Create a new Member.
+	// Create a new User.
 	user := &User{}
 
 	// Execute the query.
 	err := db.db.QueryRow(stmtSelectByEmail, email).Scan(&user.ID, user.FullName, user.UserName, user.Email, user.Password, user.CreatedAt)
+	switch {
+	case err == sql.ErrNoRows:
+		return nil, ErrUserNotFound
+	case err != nil:
+		return nil, err
+	}
+
+	return user, nil
+}
+
+// GetByUserName retrieves a user by thier user name.
+func (db *Database) GetByUserName(userName string) (*User, error) {
+	// Create a new User
+	user := &User{}
+
+	// Execute the query.
+	err := db.db.QueryRow(stmtSelectByUserName, userName).Scan(&user.ID, user.FullName, user.UserName, user.Email, user.Password, user.CreatedAt)
 	switch {
 	case err == sql.ErrNoRows:
 		return nil, ErrUserNotFound
