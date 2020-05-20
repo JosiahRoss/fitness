@@ -33,7 +33,7 @@ func (s *Service) New(params *NewParams) (*User, error) {
 	pes := errors.NewParamErrors()
 
 	// Check full_name.
-	if params.Email == "" {
+	if params.FullName == "" {
 		pes.Add(errors.NewParamError("full_name", ErrFullNameEmpty))
 	}
 
