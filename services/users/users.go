@@ -79,8 +79,11 @@ func (s *Service) New(params *NewParams) (*User, error) {
 
 	// Create this user in the database.
 	dbu, err := s.db.Users.New(&dbusers.NewParams{
-		Email:    params.Email,
-		Password: string(pwhash),
+		FullName:  params.FullName,
+		UserName:  params.UserName,
+		Email:     params.Email,
+		Password:  string(pwhash),
+		CreatedAt: params.CreatedAt,
 	})
 	if err != nil {
 		return nil, err

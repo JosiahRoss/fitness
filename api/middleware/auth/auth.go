@@ -3,8 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
-	"fitness/api/errors"
-	"fitness/database/users"
+
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,6 +11,8 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
+	"fitness/api/errors"
+	"fitness/database/users"
 	apictx "gotodo/api/context"
 )
 
