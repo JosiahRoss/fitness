@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	serverrors "gotodo/services/errors"
+	serverrors "fitness/services/errors"
 )
 
 var (

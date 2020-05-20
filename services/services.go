@@ -10,18 +10,18 @@ import (
 
 // Services defines the Services
 type Services struct {
-	Users     *users.Services
-	Sessions  *sessions.Services
-	Workouts  *workouts.Services
-	Exercises *exercises.Services
+	Users *users.Service
+	// Sessions  *sessions.Service
+	// Workouts  *workouts.Service
+	// Exercises *exercises.Service
 }
 
 // New returns a new Services.
 func New(db *database.Database) *Services {
 	return &Services{
-		Users:     users.New(db),
-		Sessions:  sessions.New(db),
-		Workouts:  workouts.New(db),
-		Exercises: exercises.New(db),
+		Users: users.New(db),
+		// Sessions:  sessions.New(db),
+		// Workouts:  workouts.New(db),
+		// Exercises: exercises.New(db),
 	}
 }

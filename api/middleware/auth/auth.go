@@ -2,8 +2,10 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"fitness/api/errors"
 	"fitness/database/users"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -98,4 +100,97 @@ func AuthenticateEndpoint(ac *apictx.Context, h http.HandlerFunc) http.HandlerFu
 		ctx := context.WithValue(r.Context(), AuthKey, user)
 		h(w, r.WithContext(ctx))
 	}
+}
+
+// GetUserFromJWT retrieves the user from the given JWT.
+func GetUserFromJWT(ac *apictx.Context, headerToken string) (*users.User, error) {
+	// Get the signing key for this user from the JWT claims.
+	signingKey, err := GetUserSigningKey(ac, headerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the token.
+	token, err := jwt.ParseWithClaims(headerToken, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		// Validate the alg.
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, ErrJWTUnauthorized
+		}
+
+		return signingKey, nil
+	})
+	if err != nil {
+		return nil, ErrJWTUnauthorized
+	}
+
+	// Get token claims and check token validity.
+	claims, ok := token.Claims.(*TokenClaims)
+	if !ok || !token.Valid {
+		return nil, ErrJWTUnauthorized
+	}
+
+	// Get the user using the UserID claim.
+	user, err := ac.Services.Users.GetByID(claims.UserID)
+	switch {
+	case err == users.ErrUserNotFound:
+		return nil, ErrJWTUnauthorized
+	case err != nil:
+		return nil, err
+	}
+
+	return user, nil
+}
+
+// GetUserSigningKey creates the unique JWT signing key for the given member
+// using the JWT secret and their current hashed password.
+//
+// The claims are parsed from the payload portion of the token to get the
+// member ID, which is then used to retrieve the hashed member password.
+func GetUserSigningKey(ac *apictx.Context, token string) ([]byte, error) {
+	// Split token.
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return []byte{}, ErrJWTUnauthorized
+	}
+
+	// Parse claims.
+	claimBytes, err := jwt.DecodeSegment(parts[1])
+	if err != nil {
+		return []byte{}, err
+	}
+
+	// Unmarshal into TokenClaims type.
+	var claims TokenClaims
+	if err := json.Unmarshal(claimBytes, &claims); err != nil {
+		return []byte{}, err
+	}
+
+	// Get the user from the UserID claim.
+	user, err := ac.Services.Users.GetByID(claims.UserID)
+	switch {
+	case err == users.ErrUserNotFound:
+		return []byte{}, ErrJWTUnauthorized
+	case err != nil:
+		return []byte{}, err
+	}
+
+	return GetJWTSigningKey(ac.Config.JWTSecret, user.Password), nil
+}
+
+// GetJWTSigningKey returns the JWT signing key.
+//
+// It is constructed using the user's hashed password and the application
+// JWT secret.
+func GetJWTSigningKey(jwtSecret, password string) []byte {
+	return []byte(jwtSecret + password)
+}
+
+// GetUserFromRequest retrieves the authenticated user from the request
+// context.
+func GetUserFromRequest(r *http.Request) (*users.User, error) {
+	user, ok := r.Context().Value(AuthKey).(*users.User)
+	if !ok {
+		return nil, fmt.Errorf("Could not type assert AuthenticatedUser from request context")
+	}
+	return user, nil
 }
