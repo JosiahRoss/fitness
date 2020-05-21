@@ -1,55 +1,55 @@
-package signup
+package login
 
 import (
 	"encoding/json"
-	"fmt"
-	"net/http"
-
-	"github.com/beeker1121/httprouter"
-
 	apictx "fitness/api/context"
 	"fitness/api/errors"
 	"fitness/api/middleware/auth"
 	"fitness/api/render"
 	serverrors "fitness/services/errors"
 	"fitness/services/users"
+	"fmt"
+	"net/http"
+
+	"github.com/beeker1121/httprouter"
 )
 
-// ResultPost defines teh response data fro the  HandlePost handler.
+// ResultPost defines the response data for the HandlePost handler.
 type ResultPost struct {
 	Data string `json:"data"`
 }
 
-// New creates the routes for the signup endpoints of  the API.
+// New creates the routes for the login enpoints of the API.
 func New(ac *apictx.Context, router *httprouter.Router) {
 	// Handle the routes.
-	router.POST("/api/v1/signup", HandlePost(ac))
-
+	router.POST("/api/v1/login", HandlePost(ac))
 }
 
-// HandlePost heandles the
+// HandlePost handles the /api/v1/login POST route of the API.
 func HandlePost(ac *apictx.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("HandlePost called")
-		// parse the parameters from the request body.
-		var params users.NewParams
-
+		// Parse the parameters from the request body.
+		var params users.LoginParams
+		fmt.Println("trying to decode")
 		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 			fmt.Println(err)
 			errors.Default(ac.Logger, w, errors.ErrBadRequest)
 			return
 		}
-		fmt.Println("body decoded")
+		fmt.Println("decoded")
 
-		// Create the user
-		user, err := ac.Services.Users.New(&params)
+		// Try to log this user in.
+		user, err := ac.Services.Users.Login(&params)
+		fmt.Println(err)
 
 		if pes, ok := err.(*serverrors.ParamErrors); ok && err != nil {
-
 			errors.Params(ac.Logger, w, http.StatusBadRequest, pes)
 			return
+		} else if err == users.ErrInvalidLogin {
+			errors.Default(ac.Logger, w, errors.New(http.StatusUnauthorized, "", err.Error()))
+			return
 		} else if err != nil {
-			ac.Logger.Printf("users.New() service error: %s\n", err)
+			ac.Logger.Printf("users.Login() service error: %s\n", err)
 			errors.Default(ac.Logger, w, errors.ErrInternalServerError)
 			return
 		}
@@ -75,5 +75,4 @@ func HandlePost(ac *apictx.Context) http.HandlerFunc {
 		}
 
 	}
-
 }

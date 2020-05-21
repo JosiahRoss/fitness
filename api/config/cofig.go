@@ -10,9 +10,9 @@ import (
 
 // Config defines the API setting for Fitness
 type Config struct {
-	DBHost        string        `json:"localhost"`
-	DBPort        string        `json:"3306"`
-	DBName        string        `json:"fitness"`
+	DBHost        string        `json:"db_host"`
+	DBPort        string        `json:"db_port"`
+	DBName        string        `json:"db_name"`
 	DBUser        string        `json:"db_user"`
 	DBPass        string        `json:"db_pass"`
 	APIHost       string        `json:"api_host"`

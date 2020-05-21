@@ -3,6 +3,8 @@ package users
 import (
 	"fitness/database"
 	"fitness/services/errors"
+	"fmt"
+	"time"
 
 	dbusers "fitness/database/users"
 
@@ -29,13 +31,16 @@ type NewParams dbusers.NewParams
 
 // New creates a new user.
 func (s *Service) New(params *NewParams) (*User, error) {
+	//fmt.Println("service.New()")
 	// Create a new ParamErrors.
 	pes := errors.NewParamErrors()
 
 	// Check full_name.
 	if params.FullName == "" {
+
 		pes.Add(errors.NewParamError("full_name", ErrFullNameEmpty))
 	}
+	//fmt.Println("checking full name")
 
 	// Check user_name.
 	if params.UserName == "" {
@@ -43,11 +48,14 @@ func (s *Service) New(params *NewParams) (*User, error) {
 	} else {
 		_, err := s.db.Users.GetByUserName(params.UserName)
 		if err == nil {
+			fmt.Println(err)
 			pes.Add(errors.NewParamError("user_name", ErrUserNameExists))
 		} else if err != nil && err != dbusers.ErrUserNotFound {
+			fmt.Println(err)
 			return nil, err
 		}
 	}
+	fmt.Println("checking user name")
 
 	// Check email.
 	if params.Email == "" {
@@ -60,11 +68,13 @@ func (s *Service) New(params *NewParams) (*User, error) {
 			return nil, err
 		}
 	}
+	fmt.Println("checking email")
 
 	// Check password.
 	if len(params.Password) < 8 {
 		pes.Add(errors.NewParamError("password", ErrPassword))
 	}
+	fmt.Println("checking password")
 
 	// Return if there were parameter errors.
 	if pes.Length() > 0 {
@@ -83,7 +93,7 @@ func (s *Service) New(params *NewParams) (*User, error) {
 		UserName:  params.UserName,
 		Email:     params.Email,
 		Password:  string(pwhash),
-		CreatedAt: params.CreatedAt,
+		CreatedAt: time.Now(),
 	})
 	if err != nil {
 		return nil, err
@@ -112,6 +122,7 @@ type LoginParams struct {
 func (s *Service) Login(params *LoginParams) (*User, error) {
 	// Try t o pull this user from the database.
 	dbu, err := s.db.Users.GetByEmail(params.Email)
+	//fmt.Println(err)
 	if err == dbusers.ErrUserNotFound {
 		return nil, ErrInvalidLogin
 	} else if err != nil {

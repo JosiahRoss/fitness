@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	apictx "fitness/api/context"
 	"fitness/api/errors"
 	"fitness/services/users"
-	apictx "gotodo/api/context"
 
 	"github.com/dgrijalva/jwt-go"
 )

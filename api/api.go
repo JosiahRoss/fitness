@@ -2,6 +2,7 @@ package api
 
 import (
 	"fitness/api/config"
+	apictx "fitness/api/context"
 	"fitness/api/errors"
 	v1 "fitness/api/v1"
 	"fitness/database"

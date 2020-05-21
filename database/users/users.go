@@ -48,7 +48,7 @@ WHERE id=?
 	stmtSelectByUserName = `
 SELECT id,full_name, user_name, email, password created_at
 FROM users
-WHERE user_name?
+WHERE user_name=?
 `
 
 	// stmtSelectByEmail defines the SQL statement
@@ -122,7 +122,8 @@ func (db *Database) GetByEmail(email string) (*User, error) {
 	user := &User{}
 
 	// Execute the query.
-	err := db.db.QueryRow(stmtSelectByEmail, email).Scan(&user.ID, user.FullName, user.UserName, user.Email, user.Password, user.CreatedAt)
+	err := db.db.QueryRow(stmtSelectByEmail, email).Scan(&user.ID, &user.FullName, &user.UserName, &user.Email, &user.Password)
+	//fmt.Println(err)
 	switch {
 	case err == sql.ErrNoRows:
 		return nil, ErrUserNotFound
