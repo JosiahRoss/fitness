@@ -64,7 +64,9 @@ func NewJWT(ac *apictx.Context, userPassword string, mid int) (string, error) {
 //
 // Currently, the only supported authorization method is via JWTs.
 func AuthenticateEndpoint(ac *apictx.Context, h http.HandlerFunc) http.HandlerFunc {
+	fmt.Println("trying to authenticateEndpoint")
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		user := &users.User{}
 		var err error
 
@@ -73,6 +75,7 @@ func AuthenticateEndpoint(ac *apictx.Context, h http.HandlerFunc) http.HandlerFu
 
 		// Check for either Bearer or Basic authoriation type.
 		if authHeader[0] != "Bearer" && authHeader[0] != "Basic" {
+
 			errors.Default(ac.Logger, w, errors.New(http.StatusUnauthorized, "", ErrUnauthorized.Error()))
 			return
 		}
@@ -126,6 +129,7 @@ func GetUserFromJWT(ac *apictx.Context, headerToken string) (*users.User, error)
 	// Get token claims and check token validity.
 	claims, ok := token.Claims.(*TokenClaims)
 	if !ok || !token.Valid {
+		fmt.Println(ok)
 		return nil, ErrJWTUnauthorized
 	}
 

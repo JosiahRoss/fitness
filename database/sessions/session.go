@@ -6,12 +6,12 @@ import (
 	"time"
 )
 
-// Database defines the workouts database
+// Database defines the session  database
 type Database struct {
 	db *sql.DB
 }
 
-// New creates a new workouts database.
+// New creates a new session  database.
 func New(db *sql.DB) *Database {
 	return &Database{
 		db: db,
@@ -33,7 +33,7 @@ type Sessions struct {
 
 const (
 	// stmtInsert defines teh SQL statement to
-	// insert a new Workoutsint the database
+	// insert a new session int the database
 	stmtInsert = `
 INSERT INTO sessions (user_id, created_on)
 VALUES(?,?)
@@ -53,12 +53,12 @@ VALUES(?,?)
 	// a given user, according to the filters.
 	stmtSelectCount = `
 SELECT COUNT(*)
-FROM workouts
+FROM session 
 %s
 `
 
 	// stmtSelectByID defines the SQL statement to
-	// select a Workout by its ID.
+	// select a Session by its ID.
 	stmtSelectByID = `
 SELECT id, user_id, created_on
 FROM sessions
@@ -66,15 +66,22 @@ WHERE id=?
 `
 
 	// stmtSelectByUserID defines the SQL statement to
-	// select a Workout by its ID.
+	// select a Session by its ID.
 	stmtSelectByUserID = `
 SELECT id, user_id, created_on
 FROM sessions
 WHERE user_id=?
 `
+	// stmtSelectByIDAndUserID defines the SQL statement to
+	// selcet a Session by its id and user_id.
+	stmtSelectByIDAndUserID = `
+SELECT id, user_id, created_on
+FROM sessions
+WHERE id=?
+	`
 
 	// stmtSelectByUserID defines the SQL statement to
-	// select a Workout by its ID.
+	// select a Session by its ID.
 	stmtSelectByCreatedOn = `
 SELECT id, user_id, created_on
 FROM sessions
@@ -85,7 +92,8 @@ WHERE created_on=?
 	// delete a session
 	stmtDelete = `
 DELETE FROM sessions
-WHERE session_id=?
+WHERE id=?
+AND user_id=?
 `
 )
 
@@ -140,20 +148,101 @@ func (db *Database) GetByID(id int) (*Session, error) {
 }
 
 // GetByUserID retrieves a session by its userID.
-func (db *Database) GetByUserID(uid int) (*Session, error) {
+func (db *Database) GetByUserID(uid int) (*Sessions, error) {
 	// Create a new Session.
-	session := &Session{}
-
+	sessions := &Sessions{
+		Sessions: []*Session{},
+	}
 	// Execute the query.
-	err := db.db.QueryRow(stmtSelectByID, uid).Scan(&session.ID, &session.UserID, &session.CreatedOn)
-	switch {
-	case err == sql.ErrNoRows:
-		return nil, ErrSessionNotFound
-	case err != nil:
+	rows, err := db.db.Query(stmtSelectByIDAndUserID, uid)
+	if err != nil {
 		return nil, err
+	}
+	defer rows.Close()
+
+	// Loop though the sessions rows.
+	for rows.Next() {
+		// Create a new Session.
+		session := &Session{}
+
+		// Scan rows values into session struct.
+		if err := rows.Scan(&session.ID, &session.UserID, &session.CreatedOn); err != nil {
+			return nil, err
+		}
+
+		// Add to sessions set
+		sessions.Sessions = append(sessions.Sessions, session)
 
 	}
-	return session, nil
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	//
+	// 	i have worries about the queryCount it feels like it wont work
+
+	//
+	//
+	//
+
+	field := "WHERE created_on=?"
+	// Build the total count query.
+	queryCount := fmt.Sprintf(stmtSelectCount, field)
+
+	// Get total count.
+	var total int
+	if err = db.db.QueryRow(queryCount).Scan(&total); err != nil {
+		return nil, err
+	}
+
+	sessions.Total = total
+
+	return sessions, nil
+
+}
+
+// GetByIDAndUserID retrieves a set of sessions by id and user_id.
+func (db *Database) GetByIDAndUserID(id, uid int) (*Sessions, error) {
+	// Create a new slice of sessions.
+	sessions := &Sessions{
+		Sessions: []*Session{},
+	}
+	// Execute the query.
+	rows, err := db.db.Query(stmtSelectByIDAndUserID, id, uid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Loop though the sessions rows.
+	for rows.Next() {
+		// Create a new Session.
+		session := &Session{}
+
+		// Scan rows values into session struct.
+		if err := rows.Scan(&session.ID, &session.UserID, &session.CreatedOn); err != nil {
+			return nil, err
+		}
+
+		// Add to sessions set
+		sessions.Sessions = append(sessions.Sessions, session)
+
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	field := "WHERE created_on=?"
+	// Build the total count query.
+	queryCount := fmt.Sprintf(stmtSelectCount, field)
+
+	// Get total count.
+	var total int
+	if err = db.db.QueryRow(queryCount).Scan(&total); err != nil {
+		return nil, err
+	}
+
+	sessions.Total = total
+
+	return sessions, nil
 
 }
 
@@ -173,7 +262,7 @@ func (db *Database) GetByCreatedOn(date time.Time) (*Sessions, error) {
 
 	// Loop though the sessions rows.
 	for rows.Next() {
-		// Create a new Workout.
+		// Create a new Session.
 		session := &Session{}
 
 		// Scan rows values into session struct.

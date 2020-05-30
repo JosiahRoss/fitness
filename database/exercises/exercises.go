@@ -38,7 +38,7 @@ const (
 	// stmtSelectAll defines the SQl statement to
 	// select all workouts in table
 	stmtSelectAll = `
-SELECT ALL
+SELECT *
 FROM exercises
 
 `
@@ -84,10 +84,12 @@ func (db *Database) GetAll() (*Exercises, error) {
 	exercises := &Exercises{
 		Exercises: []*Exercise{},
 	}
-
+	fmt.Println("about to query")
 	// Execute the querey.
 	rows, err := db.db.Query(query)
+	fmt.Println(err)
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -99,6 +101,7 @@ func (db *Database) GetAll() (*Exercises, error) {
 
 		// Scan row values into Exercise struct.
 		if err := rows.Scan(&exercise.ID, &exercise.ExerciseName, &exercise.MuscleGroup, &exercise.Description); err != nil {
+			fmt.Println(err)
 			return nil, err
 		}
 
